@@ -1,4 +1,7 @@
 require "pry" # add this to use Pry
+require 'yaml'
+
+MESSAGES = YAML.load_file('my_mortgage_message.yml')
 
 def prompt(message)
   puts "=> #{message}"
@@ -20,8 +23,8 @@ def annual_tranfer_monthly_interest_rate(input)
   input.to_f / 12
 end
 
-def months_tranfer_days_load_dur(days)
-  days.to_f / 30
+def years_tranfer_months_load_dur(years)
+  years.to_i * 12
 end
 
 def calculator_result_monthly_payment(loan_amount, monthly_interest_rate, load_dur_in_months)
@@ -31,37 +34,60 @@ def calculator_result_monthly_payment(loan_amount, monthly_interest_rate, load_d
   a * (j / (1 - (1 + j)**-n))
 end
 
-total_loan_amount = nil
-prompt "Please enter your loan amount($):"
+def recalculate?
+  loop do
+    prompt MESSAGES['recalculate']
+    continue = gets.chomp.downcase
+    if %w(yes no).include?(continue)
+      return continue == 'yes'
+    end
+    prompt MESSAGES['invalid']
+  end
+end
+
+prompt('welcome')
+
 loop do
-  total_loan_amount = gets.chomp
-  break if valid_number(total_loan_amount)
-  prompt "Please enter again!"
+  total_loan_amount = nil
+  prompt MESSAGES['loan_amount_input']
+  loop do
+    total_loan_amount = gets.chomp
+    break if valid_number(total_loan_amount) && total_loan_amount.to_f > 0
+    if total_loan_amount == '0'
+      prompt MESSAGES['good_luck']
+      prompt MESSAGES['loan_amount_input']
+    else
+      prompt MESSAGES['need_posti_num']
+    end
+  end
+
+  annual_per_rate = nil
+  prompt MESSAGES['annual_per_rate_input']
+  loop do
+    annual_per_rate = gets.chomp
+    break if valid_number(annual_per_rate)
+    prompt MESSAGES['enter_again']
+  end
+
+  loan_dur_in_years = nil
+  prompt MESSAGES['loan_dur_in_years_input']
+  loop do
+    loan_dur_in_years = gets.chomp
+    break if integer?(loan_dur_in_years) && loan_dur_in_years.to_i > 0
+    prompt MESSAGES['enter_again']
+  end
+
+  monthly_interest_rate = annual_tranfer_monthly_interest_rate(annual_per_rate)
+  load_dur_in_months = years_tranfer_months_load_dur(loan_dur_in_years)
+
+  if annual_per_rate == '0'
+    result_monthly_payment = total_loan_amount.to_f / load_dur_in_months
+  else
+    result_monthly_payment = calculator_result_monthly_payment(total_loan_amount, monthly_interest_rate, load_dur_in_months)
+  end
+
+  prompt("result_monthly_payment: $#{format('%0.2f', result_monthly_payment)}")
+
+  break unless recalculate?
 end
-
-annual_per_rate = nil
-prompt "Please enter your annual per rate(%):"
-loop do
-  annual_per_rate = gets.chomp
-  break if valid_number(annual_per_rate)
-  prompt "Please enter again!"
-end
-
-loan_dur_in_days = nil
-prompt "Please enter your loan_dur_in_days(day):"
-loop do
-  loan_dur_in_days = gets.chomp
-  break if valid_number(loan_dur_in_days)
-  prompt "Please enter again!"
-end
-
-monthly_interest_rate = annual_tranfer_monthly_interest_rate(annual_per_rate)
-load_dur_in_months = months_tranfer_days_load_dur(loan_dur_in_days)
-
-if load_dur_in_months > 1
-  result_monthly_payment = calculator_result_monthly_payment(total_loan_amount, monthly_interest_rate, load_dur_in_months)
-else
-  result_monthly_payment = total_loan_amount.to_f * (1 + monthly_interest_rate / 100)
-end
-
-prompt("result_monthly_payment: #{format('%0.2f', result_monthly_payment)}$")
+prompt('goodbye')
