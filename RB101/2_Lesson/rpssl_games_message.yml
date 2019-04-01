@@ -1,0 +1,4 @@
+welcome: "Welcome to RPS games!"
+game_rule: "Please enter your choice first!(rock, paper, scissors, lizard, spock)"
+input_rule: "You can also enter rock as r, paper as p, scissors as sc, lizard as l, spock as sp."
+play_again: "Do you want to play again? (yes or no)"
